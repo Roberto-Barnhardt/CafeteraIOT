@@ -72,7 +72,7 @@ void conectar_mqtt(){
   while(!mqtt_client.connected()){
     Serial.println("Intentando conectar con broker MQTT...");
     //if (mqtt_client.connect(id_placa.c_str(), mqtt_username.c_str(), mqtt_password.c_str())){ //UMA
-    if (mqtt_client.connect(id_placa.c_str())){ //Mio   
+    if (mqtt_client.connect("Paquito")){ //Mio   id_placa.c_str()
       Serial.println("Conectado a broker: " + mqtt_server);
     }
     else{
@@ -403,42 +403,163 @@ const unsigned char PROGMEM small_clock[] = {
 #define encA 16 
 #define encB 17 
 #define encSW 5
+unsigned int state = 0;
+bool setting_alarm = 0;
 long currentPos = 0;
 long lastPos = 0;
 bool stuffChanged = false;
 ESP32Encoder encoder;
+//Alarm time
+unsigned int time_pos = -1; //0-3 for 01:23
+unsigned int t_0 = 0;
+unsigned int t_1 = 0;
+unsigned int t_2 = 0;
+unsigned int t_3 = 0;
 
 // Functions
 
 void doEncoder() {
 
   currentPos = encoder.getCount() / 2;
+  if(state == 1 || state == 2){
+    // Handle wrapping around from the start to the end
+    if (currentPos < 0) {
+      encoder.setCount((num_items - 1) * 2);
+      currentPos = encoder.getCount() / 2;
+      lastPos = currentPos;
+      stuffChanged = true;
+    }
+    // Handle wrapping around from the end to the start
+    else if (currentPos > num_items - 1) {
+      encoder.setCount(0);
+      currentPos = encoder.getCount() / 2;
+      lastPos = currentPos;
+      stuffChanged = true;
+    } 
+    // Normal increment/decrement
+    else if (currentPos != lastPos) {
+      lastPos = currentPos;
+      stuffChanged = true;
+    }
 
-  // Handle wrapping around from the start to the end
-  if (currentPos < 0) {
-    encoder.setCount((num_items - 1) * 2);
-    currentPos = encoder.getCount() / 2;
-    lastPos = currentPos;
-    stuffChanged = true;
   }
-  // Handle wrapping around from the end to the start
-  else if (currentPos > num_items - 1) {
-    encoder.setCount(0);
-    currentPos = encoder.getCount() / 2;
-    lastPos = currentPos;
-    stuffChanged = true;
-  } 
-  // Normal increment/decrement
-  else if (currentPos != lastPos) {
-    lastPos = currentPos;
-    stuffChanged = true;
+  else if(state == 3){
+    if(setting_alarm){
+      switch(time_pos){
+        case 0: //1st hour pos --> 0-2 max
+          // Handle wrapping around from the start to the end
+          if (currentPos < 0) {
+            encoder.setCount(4);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+          // Handle wrapping around from the end to the start
+          else if (currentPos > 2) {
+            encoder.setCount(0);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          } 
+          // Normal increment/decrement
+          else if (currentPos != lastPos) {
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+        break;
+        case 1: //2nd hour pos --> 0-9 max
+            if (currentPos < 0) {
+            encoder.setCount(18);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+          // Handle wrapping around from the end to the start
+          else if (currentPos > 9) {
+            encoder.setCount(0);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          } 
+          // Normal increment/decrement
+          else if (currentPos != lastPos) {
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+        break;
+        case 2: //1st min pos --> 0-5 max
+            if (currentPos < 0) {
+            encoder.setCount((5-1)*2);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+          // Handle wrapping around from the end to the start
+          else if (currentPos > 5) {
+            encoder.setCount(0);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          } 
+          // Normal increment/decrement
+          else if (currentPos != lastPos) {
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+        break;
+        case 3: //2nd min pos --> 0-9 max
+            if (currentPos < 0) {
+            encoder.setCount((9-1)*2);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+          // Handle wrapping around from the end to the start
+          else if (currentPos > 9) {
+            encoder.setCount(0);
+            currentPos = encoder.getCount() / 2;
+            lastPos = currentPos;
+            stuffChanged = true;
+          } 
+          // Normal increment/decrement
+          else if (currentPos != lastPos) {
+            lastPos = currentPos;
+            stuffChanged = true;
+          }
+        break;
+      }
+      if(time_pos == 3){
+        setting_alarm = 0;
+      }
+    }
+    else{
+      // Handle wrapping around from the start to the end
+      if (currentPos < 0) {
+        encoder.setCount((num_items - 1) * 2);
+        currentPos = encoder.getCount() / 2;
+        lastPos = currentPos;
+        stuffChanged = true;
+      }
+      // Handle wrapping around from the end to the start
+      else if (currentPos > num_items - 1) {
+        encoder.setCount(0);
+        currentPos = encoder.getCount() / 2;
+        lastPos = currentPos;
+        stuffChanged = true;
+      } 
+      // Normal increment/decrement
+      else if (currentPos != lastPos) {
+        lastPos = currentPos;
+        stuffChanged = true;
+      }
+    }
   }
 }
 //----------------------------------------------------------------------------------
 // STATES
 //----------------------------------------------------------------------------------
 //Definitions
-unsigned int state = 0;
+//unsigned int state moved up as it was needed earlier.
 bool update_coffee_s = 0;
 bool update_alarm_s = 0;
 bool do_set_alarm = 0;
@@ -490,7 +611,7 @@ void doStates(){
     else if (state == 3){ //SET ALARM ------------------------------------------
       switch (currentPos){
         case 0: //Set time
-          do_set_alarm = true;
+          setting_alarm = true;
         break;
         case 1: //turn alarm off
           if(alarm_s == "on"){
@@ -500,6 +621,31 @@ void doStates(){
         break;
         case 2: //exit to menu
         state = 1;
+        break;
+      }
+      switch(time_pos){
+        case -1://init
+          time_pos++;
+        break;
+        case 0:
+          t_0 = currentPos;
+          time_pos++;
+        break;
+        case 1:
+          t_1 = currentPos;
+          time_pos++;
+        break;
+        case 2:
+          t_2 = currentPos;
+          time_pos++;
+        break;
+        case 3:
+          t_3 = currentPos;
+          time_pos++;
+          do_set_alarm = true;
+        break;
+        case 4:
+          setting_alarm = false;
         break;
       }
     }
@@ -571,7 +717,11 @@ void loop() {
   }
   //Set alarm time
   if(do_set_alarm){
-    //Figure out the time thingy
+    String set_alarm_time = String(t_0) + String(t_1) + ":" + String(t_2) + String(t_3);
+    time_pos = -1;
+    t_0, t_1, t_2, t_3 = 0;
+    do_set_alarm = false;
+    Serial.println("alarm set at: " + set_alarm_time);
   }
   //update alarm status
   if (update_alarm_s){
@@ -668,19 +818,80 @@ void loop() {
     display.println("Off");
     display.setCursor(85, 53);
     display.println("Exit");
-    display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
     //TIME
-    display.setTextSize(3);
-    display.setCursor(25, 20); //First h pos.
-    display.println("0");
-    display.setCursor(42, 20); //Second h pos.
-    display.println("0");
-    display.setCursor(53, 20);
-    display.println(":");
-    display.setCursor(64, 20); //First min pos.
-    display.println("0");
-    display.setCursor(81, 20); //Second min pos.
-    display.println("0");
+    if(!setting_alarm){
+      display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
+      display.setTextSize(3);
+      display.setCursor(25, 20); //First h pos.
+      display.println("0");
+      display.setCursor(42, 20); //Second h pos.
+      display.println("0");
+      display.setCursor(53, 20);
+      display.println(":");
+      display.setCursor(64, 20); //First min pos.
+      display.println("0");
+      display.setCursor(81, 20); //Second min pos.
+      display.println("0");
+    }
+    else if (setting_alarm){
+      if(time_pos == 0){
+        display.drawLine(24, 42, 40, 42, SSD1306_WHITE);
+        display.setTextSize(3);
+        display.setCursor(25, 20); //First h pos.
+        display.println(currentPos);
+        display.setCursor(42, 20); //Second h pos.
+        display.println("0");
+        display.setCursor(53, 20);
+        display.println(":");
+        display.setCursor(64, 20); //First min pos.
+        display.println("0");
+        display.setCursor(81, 20); //Second min pos.
+        display.println("0");
+      }
+      else if(time_pos == 1){
+        display.drawLine(38, 42, 54, 42, SSD1306_WHITE);
+        display.setTextSize(3);
+        display.setCursor(25, 20); //First h pos.
+        display.println(t_0);
+        display.setCursor(42, 20); //Second h pos.
+        display.println(currentPos);
+        display.setCursor(53, 20);
+        display.println(":");
+        display.setCursor(64, 20); //First min pos.
+        display.println("0");
+        display.setCursor(81, 20); //Second min pos.
+        display.println("0");
+      }
+      else if(time_pos == 2){
+        display.drawLine(58, 42, 74, 42, SSD1306_WHITE);
+        display.setTextSize(3);
+        display.setCursor(25, 20); //First h pos.
+        display.println(t_0);
+        display.setCursor(42, 20); //Second h pos.
+        display.println(t_1);
+        display.setCursor(53, 20);
+        display.println(":");
+        display.setCursor(64, 20); //First min pos.
+        display.println(currentPos);
+        display.setCursor(81, 20); //Second min pos.
+        display.println("0");
+      }
+      else if(time_pos == 3){
+        display.drawLine(74, 42, 90, 42, SSD1306_WHITE);
+        display.setTextSize(3);
+        display.setCursor(25, 20); //First h pos.
+        display.println(t_0);
+        display.setCursor(42, 20); //Second h pos.
+        display.println(t_1);
+        display.setCursor(53, 20);
+        display.println(":");
+        display.setCursor(64, 20); //First min pos.
+        display.println(t_2);
+        display.setCursor(81, 20); //Second min pos.
+        display.println(currentPos);
+      }
+    }
+
 
     display.display();
     delay(100);
