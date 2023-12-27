@@ -7,15 +7,100 @@ Por hacer:
   - MENU ENTERO...
 */
 //Probando1
+//-------------------------------------------------------------------------------
+//Librerías generales
+//-------------------------------------------------------------------------------
+#include <string>
+#include <ArduinoJson.h>
+// definimos macro para indicar función y línea de código en los mensajes
+//#define DEBUG_STRING "["+String(__FUNCTION__)+"():"+String(__LINE__)+"] "
+// documento JSON para envío mensaje.
+StaticJsonDocument<64> alarm_json;
+StaticJsonDocument<64> coffee_status_json;
+StaticJsonDocument<64> coffee_s_json;
+//StaticJsonDocument<256> mensaje;
+//StaticJsonDocument<128> prueba_post;
 //----------------------------------------------------------------------------------
-// NETWORK SETUP
+// WiFi SETUP
 //----------------------------------------------------------------------------------
-// Libraries
-
-// Definitions
-
+//Librerías
+#include <WiFi.h>
+//Variables
+String ssid = "ITWORKSNOW";
+String password = "thundercat600";
+WiFiClient wifi_client; //Para MQTT
+//Funciones
+void conectar_wifi(){
+  Serial.println("Conectando a " + ssid + " ...");
+  WiFi.begin(ssid, password);
+  while(WiFi.status()!=WL_CONNECTED){
+    delay(1000);
+    Serial.print(".");
+  }
+  Serial.println("Conectado a " + ssid + " !");  
+}
 // Functions
 
+//----------------------------------------------------------------------------------
+// MQTT SETUP
+//----------------------------------------------------------------------------------
+//Librerías
+#include <PubSubClient.h>
+//Variables
+PubSubClient mqtt_client(wifi_client);
+//const char* alarm_s;
+//const char* alarm_h;
+String alarm_s = "";
+String alarm_h = "";
+String coffee_s = "";
+//UMA 
+/*
+String mqtt_server = "iot.ac.uma.es";
+String mqtt_username = "infind";
+String mqtt_password = "zancudo";
+*/
+//Mio
+String mqtt_server = "192.168.1.114";
+String id_placa = "";
+//Topics
+String topic_pub = "";
+String topic_alarm_status = "cafeteraiot/alarm/status";
+String topic_coffee_status = "cafeteraiot/coffee/status";
+//Funciones
+void conectar_mqtt(){
+  while(!mqtt_client.connected()){
+    Serial.println("Intentando conectar con broker MQTT...");
+    //if (mqtt_client.connect(id_placa.c_str(), mqtt_username.c_str(), mqtt_password.c_str())){ //UMA
+    if (mqtt_client.connect(id_placa.c_str())){ //Mio   
+      Serial.println("Conectado a broker: " + mqtt_server);
+    }
+    else{
+      Serial.println("Error de conexión, código: " + mqtt_client.state());
+      Serial.println("Intentando de nuevo en 5s...");
+      delay(5000);
+    }
+  }
+}
+//Callback
+void procesa_mensaje(char* topic, byte* payload, unsigned int length) { 
+  String mensaje=String(std::string((char*) payload,length).c_str());
+  Serial.println("Mensaje recibido ["+ String(topic) +"] "+ mensaje);
+  // compruebo el topic
+  if(String(topic)==topic_alarm_status) // == *topic al que estemos suscrito*
+  {
+    deserializeJson(alarm_json, mensaje);
+    String alarm_status = alarm_json["status"];
+    String alarm_time = alarm_json["time"];
+    alarm_s = alarm_status;
+    alarm_h = alarm_time;
+  }
+  else if(String(topic)==topic_coffee_status) // == *topic al que estemos suscrito*
+  {
+    deserializeJson(coffee_status_json, mensaje);
+    String coffee_status = coffee_status_json["status"];
+    coffee_s = coffee_status;
+  }
+}
 //----------------------------------------------------------------------------------
 // DISPLAY SETUP
 //----------------------------------------------------------------------------------
@@ -341,11 +426,11 @@ void doEncoder() {
 //----------------------------------------------------------------------------------
 //Definitions
 unsigned int state = 0;
-bool alarm_status = false;
+bool update_coffee_s = 0;
 /*
 state 0 = Dashboard
 state 1 = Menu
-state 2 = Make coffe page
+state 2 = Make coffee page
 state 3 = Set alarm page
 */
 //Functions
@@ -367,7 +452,25 @@ void doStates(){
       }
     }
     else if (state == 2){
-      state = 1;
+      switch (currentPos){
+        case 0:
+          if (coffee_s == "off"){
+            Serial.println("turn off thing");
+            coffee_s = "on";
+            update_coffee_s = true;
+          }
+        break;
+        case 1:
+          if (coffee_s == "on"){
+            Serial.println("turn off thing");
+            coffee_s = "off";
+            update_coffee_s = true;
+          }
+        break;
+        case 2:
+        state = 1;
+        break;
+      }
     }
     else if (state == 3){
       state = 1;
@@ -388,7 +491,21 @@ void doStates(){
 void setup() {
   // Serial----------------------------------------------
   Serial.begin(115200);
-  
+
+  //WiFi ----------------------------------
+  conectar_wifi();
+
+  //MQTT ---------------------------------------------------------
+  id_placa = ESP.getEfuseMac();
+  Serial.println("ID ESP32: " + id_placa);
+  Serial.println("Topic PUB: " + topic_pub);
+  mqtt_client.setServer(mqtt_server.c_str(), 1883);
+  mqtt_client.setCallback(procesa_mensaje);
+  //mqtt_client.setBufferSize(512);
+  conectar_mqtt();
+  mqtt_client.subscribe(topic_alarm_status.c_str());
+  mqtt_client.subscribe(topic_coffee_status.c_str());
+
   // Encoder---------------------------------------------
   encoder.attachHalfQuad(encB, encA);
   encoder.setCount(0);  
@@ -416,10 +533,21 @@ void setup() {
 void loop() {
   // Encoder  
   doEncoder();
+  if (update_coffee_s == true){
+    update_coffee_s = false;
+    coffee_s_json["status"] = coffee_s;
+    String coffee_s_str;
+    serializeJson(coffee_s_json, coffee_s_str);
+    mqtt_client.publish(topic_coffee_status.c_str(), coffee_s_str.c_str());
+  }
   if (stuffChanged) {
     stuffChanged = false;
     Serial.println(currentPos);
     //doDisplayPos();
+  }
+  // MQTT
+  while (!mqtt_client.connected()){
+    conectar_mqtt();
   }
   // Display
   if (state == 1){
@@ -453,8 +581,18 @@ void loop() {
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
+    /*
     display.setCursor(20, 20);
     display.println("Make coffee time");
+    */
+    display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
+    display.setCursor(4, 53);
+    display.println("Start");
+    display.setCursor(44, 53);
+    display.println("Stop");
+    display.setCursor(85, 53);
+    display.println("Exit");
+    display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
     display.display();
     delay(100);
   }
@@ -470,9 +608,23 @@ void loop() {
     else if (state == 0){
     display.clearDisplay();
     display.drawBitmap(0, 0, dashboard, 128, 64, WHITE);
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(95, 4);
+    if (alarm_s == "off"){
+      display.println("No");
+    }
+    else if (alarm_s == "on"){
+      display.println(alarm_h);
+    }
+    else{
+      display.println("???");
+    }
     display.display();
     delay(100);
     }
+  //MQTT Loop
+  mqtt_client.loop();
 }
 //----------------------------------------------------------------------------------
 // BASURA
