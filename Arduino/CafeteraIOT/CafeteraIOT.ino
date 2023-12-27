@@ -18,6 +18,7 @@ Por hacer:
 StaticJsonDocument<64> alarm_json;
 StaticJsonDocument<64> coffee_status_json;
 StaticJsonDocument<64> coffee_s_json;
+StaticJsonDocument<64> alarm_s_json;
 //StaticJsonDocument<256> mensaje;
 //StaticJsonDocument<128> prueba_post;
 //----------------------------------------------------------------------------------
@@ -380,6 +381,18 @@ const unsigned char PROGMEM dashboard[]= {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 };
+
+//Alarm screen
+const unsigned char PROGMEM small_clock[] = {
+  0x7C,
+  0x82,
+  0x92,
+  0x9A,
+  0x82,
+  0x82,
+  0x7C
+};
+
 //----------------------------------------------------------------------------------
 // ENCODER SETUP
 //----------------------------------------------------------------------------------
@@ -427,6 +440,8 @@ void doEncoder() {
 //Definitions
 unsigned int state = 0;
 bool update_coffee_s = 0;
+bool update_alarm_s = 0;
+bool do_set_alarm = 0;
 /*
 state 0 = Dashboard
 state 1 = Menu
@@ -438,7 +453,7 @@ void doStates(){
   static unsigned long last_interrupt_time = 0;
   unsigned long interrupt_time = millis();
   if (interrupt_time - last_interrupt_time > 200) {
-    if(state == 1){
+    if(state == 1){ //MENU -----------------------------------------------
       switch(currentPos) {
         case 0:
         state = 2; //Make coffee
@@ -451,7 +466,7 @@ void doStates(){
         break;
       }
     }
-    else if (state == 2){
+    else if (state == 2){ //MAKE COFFEE --------------------------------------------
       switch (currentPos){
         case 0:
           if (coffee_s == "off"){
@@ -472,8 +487,21 @@ void doStates(){
         break;
       }
     }
-    else if (state == 3){
-      state = 1;
+    else if (state == 3){ //SET ALARM ------------------------------------------
+      switch (currentPos){
+        case 0: //Set time
+          do_set_alarm = true;
+        break;
+        case 1: //turn alarm off
+          if(alarm_s == "on"){
+            alarm_s = "off";
+            update_alarm_s = true;
+          }
+        break;
+        case 2: //exit to menu
+        state = 1;
+        break;
+      }
     }
     else if (state == 0){
       state = 1;
@@ -533,13 +561,28 @@ void setup() {
 void loop() {
   // Encoder  
   doEncoder();
-  if (update_coffee_s == true){
+  //Update coffee status
+  if (update_coffee_s){
     update_coffee_s = false;
     coffee_s_json["status"] = coffee_s;
     String coffee_s_str;
     serializeJson(coffee_s_json, coffee_s_str);
-    mqtt_client.publish(topic_coffee_status.c_str(), coffee_s_str.c_str());
+    mqtt_client.publish(topic_coffee_status.c_str(), coffee_s_str.c_str(), true);
   }
+  //Set alarm time
+  if(do_set_alarm){
+    //Figure out the time thingy
+  }
+  //update alarm status
+  if (update_alarm_s){
+    update_alarm_s = false;
+    alarm_s_json["status"] = alarm_s;
+    alarm_s_json["time"] = "Null";
+    String alarm_s_str;
+    serializeJson(alarm_s_json, alarm_s_str);
+    mqtt_client.publish(topic_alarm_status.c_str(), alarm_s_str.c_str(), true);
+  }
+  //encoder someting but cant remember
   if (stuffChanged) {
     stuffChanged = false;
     Serial.println(currentPos);
@@ -549,7 +592,7 @@ void loop() {
   while (!mqtt_client.connected()){
     conectar_mqtt();
   }
-  // Display
+  // MENU SCREEN ----------------------------------------------------------------------------------------------------
   if (state == 1){
     display.clearDisplay();
     display.drawBitmap(0, 0, background, 128, 64, WHITE);
@@ -577,6 +620,7 @@ void loop() {
     display.display();
     delay(100);
   }
+  // MAKE COFFEE SCREEN ------------------------------------------------------------
   else if (state == 2){
     display.clearDisplay();
     display.setTextSize(1);
@@ -596,23 +640,60 @@ void loop() {
     display.display();
     delay(100);
   }
+  // ALARM SCREEN -------------------------------------------------------------------
     else if (state == 3){
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(20, 20);
-    display.println("Set ALARM time");
+    //TITLE
+    display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
+    display.drawLine(83, 15, 83, 0, SSD1306_WHITE);
+    display.setCursor(14, 4);
+    display.println("SET ALARM");
+    display.drawBitmap(87, 4, small_clock, 7, 7, WHITE);
+    display.setCursor(95, 4);
+    if (alarm_s == "off"){
+      display.println("Off");
+    }
+    else if (alarm_s == "on"){
+      display.println(alarm_h);
+    }
+    else{
+      display.println("???");
+    }
+    //MENU
+    display.setCursor(4, 53);
+    display.println("Set");
+    display.setCursor(44, 53);
+    display.println("Off");
+    display.setCursor(85, 53);
+    display.println("Exit");
+    display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
+    //TIME
+    display.setTextSize(3);
+    display.setCursor(25, 20); //First h pos.
+    display.println("0");
+    display.setCursor(42, 20); //Second h pos.
+    display.println("0");
+    display.setCursor(53, 20);
+    display.println(":");
+    display.setCursor(64, 20); //First min pos.
+    display.println("0");
+    display.setCursor(81, 20); //Second min pos.
+    display.println("0");
+
     display.display();
     delay(100);
   }
-    else if (state == 0){
+  // DASHBOARD ----------------------------------------------------------------
+    else if (state == 0){  
     display.clearDisplay();
     display.drawBitmap(0, 0, dashboard, 128, 64, WHITE);
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(95, 4);
     if (alarm_s == "off"){
-      display.println("No");
+      display.println("Off");
     }
     else if (alarm_s == "on"){
       display.println(alarm_h);
