@@ -29,7 +29,7 @@ StaticJsonDocument<64> alarm_s_json;
 //Variables
 String ssid = "ITWORKSNOW";
 String password = "thundercat600";
-WiFiClient wifi_client; //Para MQTT
+WiFiClient wifi_client;
 //Funciones
 void conectar_wifi(){
   Serial.println("Conectando a " + ssid + " ...");
@@ -49,18 +49,10 @@ void conectar_wifi(){
 #include <PubSubClient.h>
 //Variables
 PubSubClient mqtt_client(wifi_client);
-//const char* alarm_s;
-//const char* alarm_h;
 String alarm_s = "";
 String alarm_h = "";
 String coffee_s = "";
-//UMA 
-/*
-String mqtt_server = "iot.ac.uma.es";
-String mqtt_username = "infind";
-String mqtt_password = "zancudo";
-*/
-//Mio
+//MQTT
 String mqtt_server = "192.168.1.114";
 String id_placa = "";
 //Topics
@@ -315,7 +307,7 @@ char menu_items[num_items][20]={
 };
 
 //Dashboard
-const unsigned char PROGMEM dashboard[]= {
+const unsigned char PROGMEM dashboard_bmp[]= {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,
   0x3E,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00,
   0x3F,0x9F,0xC7,0xE6,0x13,0xF1,0xFC,0xFE,0x7E,0x3E,0x10,0x00,0x00,0x00,0x00,0x00,
@@ -403,156 +395,95 @@ const unsigned char PROGMEM small_clock[] = {
 #define encA 16 
 #define encB 17 
 #define encSW 5
-unsigned int state = 0;
 bool setting_alarm = 0;
 long currentPos = 0;
 long lastPos = 0;
 bool stuffChanged = false;
 ESP32Encoder encoder;
+
+//State things, should be below but needed now.
+enum state{
+  dashboard,
+  menu,
+  makeCoffee,
+  setAlarm
+};
+
+state currentState = dashboard;
 //Alarm time
-unsigned int time_pos = -1; //0-3 for 01:23
-unsigned int t_0 = 0;
-unsigned int t_1 = 0;
-unsigned int t_2 = 0;
-unsigned int t_3 = 0;
+unsigned int time_pos = 0; //0-3 for 01:23
+unsigned int t_0, t_1, t_2, t_3 = 0;
 
 // Functions
-
+void countNormally(){
+  // Handle wrapping around from the start to the end
+  if (currentPos < 0) {
+    encoder.setCount((num_items - 1) * 2);
+    currentPos = encoder.getCount() / 2;
+    lastPos = currentPos;
+    stuffChanged = true;
+  }
+  // Handle wrapping around from the end to the start
+  else if (currentPos > num_items - 1) {
+    encoder.setCount(0);
+    currentPos = encoder.getCount() / 2;
+    lastPos = currentPos;
+    stuffChanged = true;
+  } 
+  // Normal increment/decrement
+  else if (currentPos != lastPos) {
+    lastPos = currentPos;
+    stuffChanged = true;
+  }
+}
 void doEncoder() {
-
   currentPos = encoder.getCount() / 2;
-  if(state == 1 || state == 2){
-    // Handle wrapping around from the start to the end
-    if (currentPos < 0) {
-      encoder.setCount((num_items - 1) * 2);
-      currentPos = encoder.getCount() / 2;
-      lastPos = currentPos;
-      stuffChanged = true;
-    }
-    // Handle wrapping around from the end to the start
-    else if (currentPos > num_items - 1) {
+  switch(currentState){
+    case menu:
+    case makeCoffee:
+      countNormally();
+    break;  
+    case setAlarm:
+      switch(setting_alarm){
+        case false:
+          countNormally();
+        break;
+        case true:
+          switch(time_pos){
+            case 0:
+              if (currentPos < 0) {
+                  encoder.setCount(4); // Set to 2
+              } else if (currentPos > 2) {
+                  encoder.setCount(0);
+              }
+            break;
+            case 1:
+            if (t_0 == 2 && currentPos > 3) {
+                encoder.setCount(t_0 == 2 ? 6 : 0); // Set to 3 if t_0 is 2
+            } else if (currentPos < 0 || currentPos > 9) {
+                encoder.setCount(0);
+            }
+            break;
+            case 2:
+            if (currentPos < 0) {
+                encoder.setCount(10); // Set to 5
+            } else if (currentPos > 5) {
+                encoder.setCount(0);
+            }
+            break;
+            case 3:
+            if (currentPos <= 0 || currentPos >= 9) {
+                encoder.setCount(0);
+            }
+            break;
+          }
+        break;
+      }
+    break;
+    case dashboard:
       encoder.setCount(0);
       currentPos = encoder.getCount() / 2;
-      lastPos = currentPos;
-      stuffChanged = true;
-    } 
-    // Normal increment/decrement
-    else if (currentPos != lastPos) {
-      lastPos = currentPos;
-      stuffChanged = true;
-    }
-
-  }
-  else if(state == 3){
-    if(setting_alarm){
-      switch(time_pos){
-        case 0: //1st hour pos --> 0-2 max
-          // Handle wrapping around from the start to the end
-          if (currentPos < 0) {
-            encoder.setCount(4);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-          // Handle wrapping around from the end to the start
-          else if (currentPos > 2) {
-            encoder.setCount(0);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          } 
-          // Normal increment/decrement
-          else if (currentPos != lastPos) {
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-        break;
-        case 1: //2nd hour pos --> 0-9 max
-            if (currentPos < 0) {
-            encoder.setCount(18);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-          // Handle wrapping around from the end to the start
-          else if (currentPos > 9) {
-            encoder.setCount(0);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          } 
-          // Normal increment/decrement
-          else if (currentPos != lastPos) {
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-        break;
-        case 2: //1st min pos --> 0-5 max
-            if (currentPos < 0) {
-            encoder.setCount((5-1)*2);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-          // Handle wrapping around from the end to the start
-          else if (currentPos > 5) {
-            encoder.setCount(0);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          } 
-          // Normal increment/decrement
-          else if (currentPos != lastPos) {
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-        break;
-        case 3: //2nd min pos --> 0-9 max
-            if (currentPos < 0) {
-            encoder.setCount((9-1)*2);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-          // Handle wrapping around from the end to the start
-          else if (currentPos > 9) {
-            encoder.setCount(0);
-            currentPos = encoder.getCount() / 2;
-            lastPos = currentPos;
-            stuffChanged = true;
-          } 
-          // Normal increment/decrement
-          else if (currentPos != lastPos) {
-            lastPos = currentPos;
-            stuffChanged = true;
-          }
-        break;
-      }
-      if(time_pos == 3){
-        setting_alarm = 0;
-      }
-    }
-    else{
-      // Handle wrapping around from the start to the end
-      if (currentPos < 0) {
-        encoder.setCount((num_items - 1) * 2);
-        currentPos = encoder.getCount() / 2;
-        lastPos = currentPos;
-        stuffChanged = true;
-      }
-      // Handle wrapping around from the end to the start
-      else if (currentPos > num_items - 1) {
-        encoder.setCount(0);
-        currentPos = encoder.getCount() / 2;
-        lastPos = currentPos;
-        stuffChanged = true;
-      } 
-      // Normal increment/decrement
-      else if (currentPos != lastPos) {
-        lastPos = currentPos;
-        stuffChanged = true;
-      }
-    }
+    break;
   }
 }
 //----------------------------------------------------------------------------------
@@ -563,100 +494,100 @@ void doEncoder() {
 bool update_coffee_s = 0;
 bool update_alarm_s = 0;
 bool do_set_alarm = 0;
-/*
-state 0 = Dashboard
-state 1 = Menu
-state 2 = Make coffee page
-state 3 = Set alarm page
-*/
+unsigned long last_interrupt_time = 0;
+unsigned long interrupt_time;
 //Functions
 void doStates(){
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 200) {
-    if(state == 1){ //MENU -----------------------------------------------
-      switch(currentPos) {
-        case 0:
-        state = 2; //Make coffee
-        break;
-        case 1:
-        state = 3; //Set alarm
-        break;
-        case 2:
-        state = 0; //Exit from menu
-        break;
-      }
-    }
-    else if (state == 2){ //MAKE COFFEE --------------------------------------------
-      switch (currentPos){
-        case 0:
-          if (coffee_s == "off"){
-            Serial.println("turn off thing");
-            coffee_s = "on";
-            update_coffee_s = true;
-          }
-        break;
-        case 1:
-          if (coffee_s == "on"){
-            Serial.println("turn off thing");
-            coffee_s = "off";
-            update_coffee_s = true;
-          }
-        break;
-        case 2:
-        state = 1;
-        break;
-      }
-    }
-    else if (state == 3){ //SET ALARM ------------------------------------------
-      switch (currentPos){
-        case 0: //Set time
-          setting_alarm = true;
-        break;
-        case 1: //turn alarm off
-          if(alarm_s == "on"){
-            alarm_s = "off";
-            update_alarm_s = true;
-          }
-        break;
-        case 2: //exit to menu
-        state = 1;
-        break;
-      }
-      switch(time_pos){
-        case -1://init
-          time_pos++;
-        break;
-        case 0:
-          t_0 = currentPos;
-          time_pos++;
-        break;
-        case 1:
-          t_1 = currentPos;
-          time_pos++;
-        break;
-        case 2:
-          t_2 = currentPos;
-          time_pos++;
-        break;
-        case 3:
-          t_3 = currentPos;
-          time_pos++;
-          do_set_alarm = true;
-        break;
-        case 4:
-          setting_alarm = false;
-        break;
-      }
-    }
-    else if (state == 0){
-      state = 1;
-    }
-    else{
-      state = 0;
-    }
-    last_interrupt_time = interrupt_time;
-  }  
+  //Serial.println("click");
+  //static unsigned long last_interrupt_time = 0;
+  
+  if (millis() - last_interrupt_time > 200) {
+    last_interrupt_time = millis();
+    switch(currentState){ //MENU -----------------------------------------------
+      case menu:
+        switch(currentPos) {
+          case 0:
+          currentState = makeCoffee; //Make coffee
+          break;
+          case 1:
+          currentState = setAlarm; //Set alarm
+          break;
+          case 2:
+          currentState = dashboard; //Exit from menu
+          break;
+        }
+      break;
+      case makeCoffee: //MAKE COFFEE --------------------------------------------
+        switch (currentPos){
+          case 0:
+            if (coffee_s == "off"){
+              Serial.println("turn off thing");
+              coffee_s = "on";
+              update_coffee_s = true;
+            }
+          break;
+          case 1:
+            if (coffee_s == "on"){
+              Serial.println("turn off thing");
+              coffee_s = "off";
+              update_coffee_s = true;
+            }
+          break;
+          case 2:
+          currentState = menu;
+          break;
+        }
+      break;
+      case setAlarm: //SET ALARM ------------------------------------------
+        switch(setting_alarm){
+          case false:
+            switch (currentPos){
+              case 0: //Set time
+                setting_alarm = true;
+              break;
+              case 1: //turn alarm off
+                if(alarm_s == "on"){
+                  alarm_s = "off";
+                  update_alarm_s = true;
+                }
+              break;
+              case 2: //exit to menu
+              currentState = menu;
+              break;
+            }
+          break;
+          case true:
+            switch(time_pos){
+              case -1://init
+                time_pos++;
+              break;
+              case 0:
+                t_0 = currentPos;
+                time_pos++;
+              break;
+              case 1:
+                t_1 = currentPos;
+                time_pos++;
+              break;
+              case 2:
+                t_2 = currentPos;
+                time_pos++;
+              break;
+              case 3:
+                t_3 = currentPos;
+                time_pos++;
+                do_set_alarm = true;
+              break;
+            }
+          break;
+        }
+        
+      break;
+      case dashboard:
+        currentState = menu;
+      break;   
+    } 
+  } 
 }
 
 //----------------------------------------------------------------------------------
@@ -684,7 +615,7 @@ void setup() {
   encoder.attachHalfQuad(encB, encA);
   encoder.setCount(0);  
   pinMode(encSW, INPUT_PULLUP);
-  attachInterrupt(encSW, doStates, FALLING);
+  attachInterrupt(encSW, doStates, RISING);
 
   // Display---------------------------------------------------------
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
@@ -705,7 +636,7 @@ void setup() {
 // LOOP
 //----------------------------------------------------------------------------------
 void loop() {
-  // Encoder  
+  // Encoder
   doEncoder();
   //Update coffee status
   if (update_coffee_s){
@@ -718,16 +649,22 @@ void loop() {
   //Set alarm time
   if(do_set_alarm){
     String set_alarm_time = String(t_0) + String(t_1) + ":" + String(t_2) + String(t_3);
-    time_pos = -1;
+    time_pos = 0;
     t_0, t_1, t_2, t_3 = 0;
     do_set_alarm = false;
     Serial.println("alarm set at: " + set_alarm_time);
+    alarm_s_json["status"] = "on";
+    alarm_s_json["time"] = set_alarm_time;
+    String alarm_s_str;
+    serializeJson(alarm_s_json, alarm_s_str);
+    mqtt_client.publish(topic_alarm_status.c_str(), alarm_s_str.c_str(), true);
+    setting_alarm = false;
   }
   //update alarm status
   if (update_alarm_s){
     update_alarm_s = false;
     alarm_s_json["status"] = alarm_s;
-    alarm_s_json["time"] = "Null";
+    alarm_s_json["time"] = "Off";
     String alarm_s_str;
     serializeJson(alarm_s_json, alarm_s_str);
     mqtt_client.publish(topic_alarm_status.c_str(), alarm_s_str.c_str(), true);
@@ -742,8 +679,48 @@ void loop() {
   while (!mqtt_client.connected()){
     conectar_mqtt();
   }
-  // MENU SCREEN ----------------------------------------------------------------------------------------------------
-  if (state == 1){
+  //Display updates
+  switch(currentState){
+    case dashboard:
+      doDashboard();
+    break;
+    case menu:
+      doMenu();
+    break;
+    case setAlarm:
+      doSetAlarm();
+    break;
+    case makeCoffee:
+      doMakeCoffee();
+    break;
+  }
+  display.display();
+  delay(50);
+  //MQTT Loop
+  mqtt_client.loop();
+}
+//----------------------------------------------------------------------------------
+// DISPLAY FUNCTIONS
+//----------------------------------------------------------------------------------
+
+void doDashboard(){
+    display.clearDisplay();
+    display.drawBitmap(0, 0, dashboard_bmp, 128, 64, WHITE);
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(95, 4);
+    if (alarm_s == "off"){
+      display.println("Off");
+    }
+    else if (alarm_s == "on"){
+      display.println(alarm_h);
+    }
+    else{
+      display.println("???");
+    }
+}
+
+void doMenu(){
     display.clearDisplay();
     display.drawBitmap(0, 0, background, 128, 64, WHITE);
     int prevPos = 0;
@@ -767,59 +744,38 @@ void loop() {
     display.drawBitmap(col_c, icon_toprow, menu_icons[nextPos], icon_width, icon_height, WHITE);
     display.setCursor(96, text_row);
     display.println(menu_items[nextPos]);
-    display.display();
-    delay(100);
-  }
-  // MAKE COFFEE SCREEN ------------------------------------------------------------
-  else if (state == 2){
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    /*
-    display.setCursor(20, 20);
-    display.println("Make coffee time");
-    */
-    display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
-    display.setCursor(4, 53);
-    display.println("Start");
-    display.setCursor(44, 53);
-    display.println("Stop");
-    display.setCursor(85, 53);
-    display.println("Exit");
-    display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
-    display.display();
-    delay(100);
-  }
-  // ALARM SCREEN -------------------------------------------------------------------
-    else if (state == 3){
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    //TITLE
-    display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
-    display.drawLine(83, 15, 83, 0, SSD1306_WHITE);
-    display.setCursor(14, 4);
-    display.println("SET ALARM");
-    display.drawBitmap(87, 4, small_clock, 7, 7, WHITE);
-    display.setCursor(95, 4);
-    if (alarm_s == "off"){
-      display.println("Off");
-    }
-    else if (alarm_s == "on"){
-      display.println(alarm_h);
-    }
-    else{
-      display.println("???");
-    }
-    //MENU
-    display.setCursor(4, 53);
-    display.println("Set");
-    display.setCursor(44, 53);
+}
+
+void doSetAlarm(){
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  //TITLE
+  display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
+  display.drawLine(83, 15, 83, 0, SSD1306_WHITE);
+  display.setCursor(14, 4);
+  display.println("SET ALARM");
+  display.drawBitmap(87, 4, small_clock, 7, 7, WHITE);
+  display.setCursor(95, 4);
+  if (alarm_s == "off"){
     display.println("Off");
-    display.setCursor(85, 53);
-    display.println("Exit");
-    //TIME
-    if(!setting_alarm){
+  }
+  else if (alarm_s == "on"){
+    display.println(alarm_h);
+  }
+  else{
+    display.println("???");
+  }
+  //MENU
+  display.setCursor(4, 53);
+  display.println("Set");
+  display.setCursor(44, 53);
+  display.println("Off");
+  display.setCursor(85, 53);
+  display.println("Exit");
+  //TIME
+  switch(setting_alarm){
+    case false:
       display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
       display.setTextSize(3);
       display.setCursor(25, 20); //First h pos.
@@ -832,92 +788,80 @@ void loop() {
       display.println("0");
       display.setCursor(81, 20); //Second min pos.
       display.println("0");
-    }
-    else if (setting_alarm){
-      if(time_pos == 0){
-        display.drawLine(24, 42, 40, 42, SSD1306_WHITE);
-        display.setTextSize(3);
-        display.setCursor(25, 20); //First h pos.
-        display.println(currentPos);
-        display.setCursor(42, 20); //Second h pos.
-        display.println("0");
-        display.setCursor(53, 20);
-        display.println(":");
-        display.setCursor(64, 20); //First min pos.
-        display.println("0");
-        display.setCursor(81, 20); //Second min pos.
-        display.println("0");
+    break;
+    case true:
+      switch(time_pos){
+        case 0:
+          display.drawLine(24, 42, 40, 42, SSD1306_WHITE);
+          display.setTextSize(3);
+          display.setCursor(25, 20); //First h pos.
+          display.println(currentPos);
+          display.setCursor(42, 20); //Second h pos.
+          display.println("0");
+          display.setCursor(53, 20);
+          display.println(":");
+          display.setCursor(64, 20); //First min pos.
+          display.println("0");
+          display.setCursor(81, 20); //Second min pos.
+          display.println("0");
+        break;
+        case 1:    
+          display.drawLine(38, 42, 54, 42, SSD1306_WHITE);
+          display.setTextSize(3);
+          display.setCursor(25, 20); //First h pos.
+          display.println(t_0);
+          display.setCursor(42, 20); //Second h pos.
+          display.println(currentPos);
+          display.setCursor(53, 20);
+          display.println(":");
+          display.setCursor(64, 20); //First min pos.
+          display.println("0");
+          display.setCursor(81, 20); //Second min pos.
+          display.println("0");
+        break;
+        case 2:
+          display.drawLine(58, 42, 74, 42, SSD1306_WHITE);
+          display.setTextSize(3);
+          display.setCursor(25, 20); //First h pos.
+          display.println(t_0);
+          display.setCursor(42, 20); //Second h pos.
+          display.println(t_1);
+          display.setCursor(53, 20);
+          display.println(":");
+          display.setCursor(64, 20); //First min pos.
+          display.println(currentPos);
+          display.setCursor(81, 20); //Second min pos.
+          display.println("0");
+        break;
+        case 3:
+          display.drawLine(74, 42, 90, 42, SSD1306_WHITE);
+          display.setTextSize(3);
+          display.setCursor(25, 20); //First h pos.
+          display.println(t_0);
+          display.setCursor(42, 20); //Second h pos.
+          display.println(t_1);
+          display.setCursor(53, 20);
+          display.println(":");
+          display.setCursor(64, 20); //First min pos.
+          display.println(t_2);
+          display.setCursor(81, 20); //Second min pos.
+          display.println(currentPos);
+        break;
       }
-      else if(time_pos == 1){
-        display.drawLine(38, 42, 54, 42, SSD1306_WHITE);
-        display.setTextSize(3);
-        display.setCursor(25, 20); //First h pos.
-        display.println(t_0);
-        display.setCursor(42, 20); //Second h pos.
-        display.println(currentPos);
-        display.setCursor(53, 20);
-        display.println(":");
-        display.setCursor(64, 20); //First min pos.
-        display.println("0");
-        display.setCursor(81, 20); //Second min pos.
-        display.println("0");
-      }
-      else if(time_pos == 2){
-        display.drawLine(58, 42, 74, 42, SSD1306_WHITE);
-        display.setTextSize(3);
-        display.setCursor(25, 20); //First h pos.
-        display.println(t_0);
-        display.setCursor(42, 20); //Second h pos.
-        display.println(t_1);
-        display.setCursor(53, 20);
-        display.println(":");
-        display.setCursor(64, 20); //First min pos.
-        display.println(currentPos);
-        display.setCursor(81, 20); //Second min pos.
-        display.println("0");
-      }
-      else if(time_pos == 3){
-        display.drawLine(74, 42, 90, 42, SSD1306_WHITE);
-        display.setTextSize(3);
-        display.setCursor(25, 20); //First h pos.
-        display.println(t_0);
-        display.setCursor(42, 20); //Second h pos.
-        display.println(t_1);
-        display.setCursor(53, 20);
-        display.println(":");
-        display.setCursor(64, 20); //First min pos.
-        display.println(t_2);
-        display.setCursor(81, 20); //Second min pos.
-        display.println(currentPos);
-      }
-    }
-
-
-    display.display();
-    delay(100);
+    break;
   }
-  // DASHBOARD ----------------------------------------------------------------
-    else if (state == 0){  
-    display.clearDisplay();
-    display.drawBitmap(0, 0, dashboard, 128, 64, WHITE);
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(95, 4);
-    if (alarm_s == "off"){
-      display.println("Off");
-    }
-    else if (alarm_s == "on"){
-      display.println(alarm_h);
-    }
-    else{
-      display.println("???");
-    }
-    display.display();
-    delay(100);
-    }
-  //MQTT Loop
-  mqtt_client.loop();
 }
-//----------------------------------------------------------------------------------
-// BASURA
-//----------------------------------------------------------------------------------
+
+void doMakeCoffee(){
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.drawLine(0, 15, SCREEN_WIDTH, 15, SSD1306_WHITE);
+  display.setCursor(4, 53);
+  display.println("Start");
+  display.setCursor(44, 53);
+  display.println("Stop");
+  display.setCursor(85, 53);
+  display.println("Exit");
+  display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
+}
