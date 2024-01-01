@@ -27,8 +27,8 @@ StaticJsonDocument<64> alarm_s_json;
 //Librerías
 #include <WiFi.h>
 //Variables
-String ssid = "ITWORKSNOW";
-String password = "thundercat600";
+String ssid = "MOVISTAR_3D01";
+String password = "LC4hwy775866XGmZnZ7h";
 WiFiClient wifi_client;
 //Funciones
 void conectar_wifi(){
@@ -52,8 +52,9 @@ PubSubClient mqtt_client(wifi_client);
 String alarm_s = "";
 String alarm_h = "";
 String coffee_s = "";
+bool makingCoffee;
 //MQTT
-String mqtt_server = "192.168.1.114";
+String mqtt_server = "192.168.1.47";
 String id_placa = "";
 //Topics
 String topic_pub = "";
@@ -92,6 +93,11 @@ void procesa_mensaje(char* topic, byte* payload, unsigned int length) {
     deserializeJson(coffee_status_json, mensaje);
     String coffee_status = coffee_status_json["status"];
     coffee_s = coffee_status;
+    if (coffee_s == "on"){
+      makingCoffee = true;
+    } else if(coffee_s == "off"){
+      makingCoffee = false;
+    }
   }
 }
 //----------------------------------------------------------------------------------
@@ -110,6 +116,46 @@ void procesa_mensaje(char* topic, byte* payload, unsigned int length) {
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Functions
+//----------------------------------------------------------------------------------
+// POT SWITCH
+//----------------------------------------------------------------------------------
+#define potSW 33
+
+bool potInplace = false;
+bool checkSW = false;
+unsigned long last_potSW_interrupt;
+
+void checkPot(){
+  if (millis() - last_potSW_interrupt > 100) {
+  last_potSW_interrupt = millis();
+  checkSW = true;
+  }
+}
+
+//----------------------------------------------------------------------------------
+// TEMP SENSOR
+//----------------------------------------------------------------------------------    
+//Libraries
+#include <OneWire.h>
+#include <DS18B20.h>
+//Definitions
+#define ONE_WIRE_BUS 4
+OneWire oneWire(ONE_WIRE_BUS);
+DS18B20 sensor(&oneWire);
+unsigned long last_temp_check = 0;
+int temp = 0;
+//Functions
+//----------------------------------------------------------------------------------
+// ULTRASONIC SENSOR
+//----------------------------------------------------------------------------------    
+//Libraries
+#include <hcsr04.h>
+//Definitions
+#define TRIG_PIN 26
+#define ECHO_PIN 27
+HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
+unsigned long last_water_check = 0;
+//Functions
 
 //----------------------------------------------------------------------------------
 // DISPLAY GEOMETRY
@@ -490,12 +536,15 @@ void doEncoder() {
 // STATES
 //----------------------------------------------------------------------------------
 //Definitions
+#define relayPin 14
 //unsigned int state moved up as it was needed earlier.
 bool update_coffee_s = 0;
 bool update_alarm_s = 0;
 bool do_set_alarm = 0;
 unsigned long last_interrupt_time = 0;
-unsigned long interrupt_time;
+//unsigned long interrupt_time;
+unsigned long coffee_making_time = 0;
+unsigned int coffee_heat_time = 60*40; //40 mins == real coffee machine timer
 //Functions
 void doStates(){
   //Serial.println("click");
@@ -523,6 +572,7 @@ void doStates(){
             if (coffee_s == "off"){
               Serial.println("turn off thing");
               coffee_s = "on";
+              makingCoffee = true;
               update_coffee_s = true;
             }
           break;
@@ -530,6 +580,7 @@ void doStates(){
             if (coffee_s == "on"){
               Serial.println("turn off thing");
               coffee_s = "off";
+              makingCoffee = false;
               update_coffee_s = true;
             }
           break;
@@ -563,18 +614,22 @@ void doStates(){
               break;
               case 0:
                 t_0 = currentPos;
+                encoder.setCount(0);
                 time_pos++;
               break;
               case 1:
                 t_1 = currentPos;
+                encoder.setCount(0);
                 time_pos++;
               break;
               case 2:
                 t_2 = currentPos;
+                encoder.setCount(0);
                 time_pos++;
               break;
               case 3:
                 t_3 = currentPos;
+                encoder.setCount(0);
                 time_pos++;
                 do_set_alarm = true;
               break;
@@ -617,6 +672,16 @@ void setup() {
   pinMode(encSW, INPUT_PULLUP);
   attachInterrupt(encSW, doStates, RISING);
 
+  // Relay -------------------------------------------------
+  pinMode(relayPin, OUTPUT);
+
+  // Pot Switch ---------------------------------------------
+  pinMode(potSW, INPUT_PULLUP);
+  attachInterrupt(potSW, checkPot, RISING);
+
+  //Temp Sensors ---------------------------------------------
+  sensor.begin();
+
   // Display---------------------------------------------------------
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -638,6 +703,23 @@ void setup() {
 void loop() {
   // Encoder
   doEncoder();
+  // Pot switch
+  if (checkSW){
+    delay(50);
+    potInplace = !digitalRead(potSW);
+    checkSW = false;
+  }
+  // Temp sensors
+  if (millis() - last_temp_check > 500){
+    last_temp_check = millis();
+    sensor.requestTemperatures();
+    temp = sensor.getTempC();
+  }
+  // Ultrasonic sensor
+  if (millis() - last_water_check > 1000){
+    last_water_check = millis();
+    Serial.println(hcsr04.distanceInMillimeters());
+  }
   //Update coffee status
   if (update_coffee_s){
     update_coffee_s = false;
@@ -646,6 +728,13 @@ void loop() {
     serializeJson(coffee_s_json, coffee_s_str);
     mqtt_client.publish(topic_coffee_status.c_str(), coffee_s_str.c_str(), true);
   }
+  //Toggle coffee machine LOW = RELAY ON // HIGH = RELAY OFF
+  if (makingCoffee){
+    digitalWrite(relayPin, LOW);
+  }else{
+    digitalWrite(relayPin, HIGH);
+  }
+  
   //Set alarm time
   if(do_set_alarm){
     String set_alarm_time = String(t_0) + String(t_1) + ":" + String(t_2) + String(t_3);
@@ -718,6 +807,25 @@ void doDashboard(){
     else{
       display.println("???");
     }
+    //Pot data
+    display.setCursor(45, 50);
+    display.println("Pot: ");
+    display.setCursor(73, 50);
+    if(potInplace){
+      display.println("OK");
+    }
+    else if(!potInplace){
+      display.println("Missing");
+    }
+    //Temperature
+    display.setCursor(45, 20);
+    display.println("Temp: ");
+    display.setCursor(75, 20);
+    display.println(temp);
+    display.setCursor(90, 20);
+    display.println("C");
+    
+
 }
 
 void doMenu(){
@@ -864,4 +972,12 @@ void doMakeCoffee(){
   display.setCursor(85, 53);
   display.println("Exit");
   display.drawRect(40*currentPos, 48, 40, 16, SSD1306_WHITE);
+  display.setCursor(20, 20);
+  display.println("Status: ");
+  display.setCursor(64, 20);
+  if (makingCoffee){
+    display.println("ON");
+  }else if(!makingCoffee){
+    display.println("OFF");
+  }
 }
