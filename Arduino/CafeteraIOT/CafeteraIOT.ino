@@ -19,6 +19,7 @@ StaticJsonDocument<64> alarm_json;
 StaticJsonDocument<64> coffee_status_json;
 StaticJsonDocument<64> coffee_s_json;
 StaticJsonDocument<64> alarm_s_json;
+StaticJsonDocument<64> water_level_json;
 //StaticJsonDocument<256> mensaje;
 //StaticJsonDocument<128> prueba_post;
 //----------------------------------------------------------------------------------
@@ -60,6 +61,7 @@ String id_placa = "";
 String topic_pub = "";
 String topic_alarm_status = "cafeteraiot/alarm/status";
 String topic_coffee_status = "cafeteraiot/coffee/status";
+String topic_water_level = "cafeteraiot/water_level";
 //Funciones
 void conectar_mqtt(){
   while(!mqtt_client.connected()){
@@ -155,8 +157,17 @@ int temp = 0;
 #define ECHO_PIN 27
 HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
 unsigned long last_water_check = 0;
+int water_level_percent = 0;
 //Functions
-
+void doWaterLevel(){
+    int water_level_mm = hcsr04.distanceInMillimeters();
+    water_level_percent = map(water_level_mm, 115, 25, 0, 100);
+    water_level_json["level"] = water_level_percent;
+    String water_level_str;
+    serializeJson(water_level_json, water_level_str);
+    mqtt_client.publish(topic_water_level.c_str(), water_level_str.c_str(), true);
+    Serial.println("Water level: " + String(water_level_percent) + " %.");
+}
 //----------------------------------------------------------------------------------
 // DISPLAY GEOMETRY
 //----------------------------------------------------------------------------------
@@ -678,9 +689,12 @@ void setup() {
   // Pot Switch ---------------------------------------------
   pinMode(potSW, INPUT_PULLUP);
   attachInterrupt(potSW, checkPot, RISING);
-
+  checkPot();
   //Temp Sensors ---------------------------------------------
   sensor.begin();
+
+  //Ultrasonic Sensor----------------------------------------------
+  doWaterLevel();
 
   // Display---------------------------------------------------------
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
@@ -716,9 +730,9 @@ void loop() {
     temp = sensor.getTempC();
   }
   // Ultrasonic sensor
-  if (millis() - last_water_check > 1000){
+  if (millis() - last_water_check > 10000){
     last_water_check = millis();
-    Serial.println(hcsr04.distanceInMillimeters());
+    doWaterLevel();
   }
   //Update coffee status
   if (update_coffee_s){
@@ -824,6 +838,13 @@ void doDashboard(){
     display.println(temp);
     display.setCursor(90, 20);
     display.println("C");
+    //Water level
+    display.setCursor(45, 35);
+    display.println("Water: ");
+    display.setCursor(82, 35);
+    display.println(water_level_percent);
+    display.setCursor(102, 35);
+    display.println("%");
     
 
 }
