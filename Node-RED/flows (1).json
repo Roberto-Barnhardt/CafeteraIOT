@@ -1,0 +1,1343 @@
+[
+    {
+        "id": "49b807f2f917cbb4",
+        "type": "tab",
+        "label": "CafeteraIOT",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "dfa216ac312c3f76",
+        "type": "group",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "style": {
+            "fill": "#7fb7df",
+            "fill-opacity": "0.37",
+            "label": true
+        },
+        "nodes": [
+            "8239efbbe4b93434",
+            "95ea734503c69ad8",
+            "f1993f292a4a5e67",
+            "d1ab89945c52862b",
+            "5dd6db6de41be6c3",
+            "aaa8fd5e84bb1d6b",
+            "1739036bc4b6c8ec"
+        ],
+        "x": 34,
+        "y": 19,
+        "w": 492,
+        "h": 282
+    },
+    {
+        "id": "44bc797fdaab9651",
+        "type": "group",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "style": {
+            "fill": "#dbcbe7",
+            "fill-opacity": "0.43",
+            "label": true
+        },
+        "nodes": [
+            "a57e46e7077afcee",
+            "dcce1166571ace02",
+            "f67fc59f42306f02",
+            "95ec36055c9f8757",
+            "c050b5aae7a61a59",
+            "1487379ea14003d8"
+        ],
+        "x": 814,
+        "y": 339,
+        "w": 652,
+        "h": 322
+    },
+    {
+        "id": "115b92cc3500e409",
+        "type": "group",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "style": {
+            "fill": "#c8e7a7",
+            "fill-opacity": "0.35",
+            "label": true
+        },
+        "nodes": [
+            "2fd0df25a27dc917",
+            "2bdab53907926643",
+            "4e780ba104d21f7d",
+            "81394eff94c515b7",
+            "780c07fc9dfffc2b",
+            "487b1336b0bda16b",
+            "e59913ec36b93ab3",
+            "e9002475be387080",
+            "a86c78ec0fdacd84",
+            "889f5aaede6cf924"
+        ],
+        "x": 554,
+        "y": 19,
+        "w": 852,
+        "h": 282
+    },
+    {
+        "id": "89c61fe7b44f9f98",
+        "type": "group",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "style": {
+            "fill": "#ffdf7f",
+            "fill-opacity": "0.38",
+            "label": true
+        },
+        "nodes": [
+            "ad8049bfd1c9b63b",
+            "3521c6f2ad96549f",
+            "62a4be0ed10eef2c",
+            "eaca7a383a5dbe95",
+            "10fe3d50164ded6a",
+            "d4767d59d5368664",
+            "a4833898bd4f61d3",
+            "11c5c1d5a4bbe329",
+            "0921177f9c773158",
+            "5914922c8327652f",
+            "f175acee830fded7",
+            "40c6c245f620ae11",
+            "2851df91cc48657b",
+            "c4f0545308bd1fb9",
+            "5704a9c812af2a37",
+            "eabe070bc357996d",
+            "7023586abefdd463",
+            "cfcc16029c73f145",
+            "20576d1cbf559970",
+            "d581a8153b167cdd",
+            "f969f575762c722e",
+            "9f68b0de15cea53a"
+        ],
+        "x": 34,
+        "y": 319,
+        "w": 732,
+        "h": 522
+    },
+    {
+        "id": "8239efbbe4b93434",
+        "type": "inject",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "alarm 10:00",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"status\" : \"on\", \"time\": \"23:49\"}",
+        "payloadType": "json",
+        "x": 150,
+        "y": 120,
+        "wires": [
+            [
+                "f1993f292a4a5e67"
+            ]
+        ]
+    },
+    {
+        "id": "95ea734503c69ad8",
+        "type": "inject",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "alarm off",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"status\" : \"off\", \"time\": \"\"}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 160,
+        "wires": [
+            [
+                "f1993f292a4a5e67"
+            ]
+        ]
+    },
+    {
+        "id": "f1993f292a4a5e67",
+        "type": "mqtt out",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "",
+        "topic": "cafeteraiot/alarm/status",
+        "qos": "1",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "73d49c9cfad6f8d1",
+        "x": 390,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "d1ab89945c52862b",
+        "type": "mqtt out",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "",
+        "topic": "cafeteraiot/coffee/status",
+        "qos": "",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "73d49c9cfad6f8d1",
+        "x": 390,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "5dd6db6de41be6c3",
+        "type": "inject",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "coffee on",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"status\" : \"on\"}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "d1ab89945c52862b"
+            ]
+        ]
+    },
+    {
+        "id": "aaa8fd5e84bb1d6b",
+        "type": "inject",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "coffee off",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"status\" : \"off\"}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 260,
+        "wires": [
+            [
+                "d1ab89945c52862b"
+            ]
+        ]
+    },
+    {
+        "id": "2fd0df25a27dc917",
+        "type": "mongodb in",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "alarm",
+        "operation": "find",
+        "x": 1070,
+        "y": 120,
+        "wires": [
+            [
+                "e59913ec36b93ab3"
+            ]
+        ]
+    },
+    {
+        "id": "2bdab53907926643",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "Ultimo mensaje",
+        "func": "msg.payload = {};\nmsg.sort = { \"_id\": -1 };\nmsg.limit = 1;\nreturn msg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 840,
+        "y": 140,
+        "wires": [
+            [
+                "2fd0df25a27dc917"
+            ]
+        ]
+    },
+    {
+        "id": "4e780ba104d21f7d",
+        "type": "inject",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 670,
+        "y": 140,
+        "wires": [
+            [
+                "2bdab53907926643"
+            ]
+        ]
+    },
+    {
+        "id": "81394eff94c515b7",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "Comparar con ahora",
+        "func": "const alarm_time = msg.payload[0].payload.time;\nconst targetHour = parseInt(alarm_time.split(\":\")[0]);\nconst targetMinute = parseInt(alarm_time.split(\":\")[1]);\n// Get the current time\nconst currentTime = new Date();\nconst currentHour = currentTime.getHours();\nconst currentMinute = currentTime.getMinutes();\nif (targetHour === currentHour && targetMinute === currentMinute) {\n    // Set a global variable to true\n    global.set(\"timeMatched\", true);\n\n    // Start a counter here (if needed, depends on how you want to implement the counter)\n    // For example, you could use a setInterval function or a separate flow\n\n    msg.payload = { \"match\": true };\n} else {\n    msg.payload = { \"match\": false };\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 700,
+        "y": 260,
+        "wires": [
+            [
+                "780c07fc9dfffc2b"
+            ]
+        ]
+    },
+    {
+        "id": "780c07fc9dfffc2b",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "If Match",
+        "func": "if(msg.payload.match == true){\n    msg.payload = {\"status\": \"on\"};\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 260,
+        "wires": [
+            [
+                "487b1336b0bda16b",
+                "889f5aaede6cf924"
+            ]
+        ]
+    },
+    {
+        "id": "487b1336b0bda16b",
+        "type": "mqtt out",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "",
+        "topic": "cafeteraiot/coffee/status",
+        "qos": "",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "73d49c9cfad6f8d1",
+        "x": 1270,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "e59913ec36b93ab3",
+        "type": "switch",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "",
+        "property": "payload[0].payload.status",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "on",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1270,
+        "y": 120,
+        "wires": [
+            [
+                "81394eff94c515b7"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "937f2449c0851e36",
+        "type": "ui_gauge",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "group": "85d4fb6d3172e56e",
+        "order": 8,
+        "width": 0,
+        "height": 0,
+        "gtype": "wave",
+        "title": "Water level",
+        "label": "%",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1090,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "488329f47357db7d",
+        "type": "mqtt in",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "topic": "cafeteraiot/water_level",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "73d49c9cfad6f8d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 580,
+        "y": 860,
+        "wires": [
+            [
+                "bdb3e53b0a576aa7",
+                "70c58a796f8fd646"
+            ]
+        ]
+    },
+    {
+        "id": "bdb3e53b0a576aa7",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "name": "function 7",
+        "func": "msg.payload = msg.payload.level;\nmsg.colour = \"blue\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 840,
+        "wires": [
+            [
+                "937f2449c0851e36"
+            ]
+        ]
+    },
+    {
+        "id": "a565c1c27032fa27",
+        "type": "mongodb out",
+        "z": "49b807f2f917cbb4",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "water_level",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 990,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "70c58a796f8fd646",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "name": "+date",
+        "func": "msg.payload[\"date\"] = new Date();\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 880,
+        "wires": [
+            [
+                "a565c1c27032fa27"
+            ]
+        ]
+    },
+    {
+        "id": "a57e46e7077afcee",
+        "type": "telegram receiver",
+        "z": "49b807f2f917cbb4",
+        "g": "44bc797fdaab9651",
+        "name": "",
+        "bot": "a2c03ae15197aa2c",
+        "saveDataDir": "",
+        "filterCommands": false,
+        "x": 930,
+        "y": 380,
+        "wires": [
+            [
+                "dcce1166571ace02"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "1739036bc4b6c8ec",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "g": "dfa216ac312c3f76",
+        "name": "Testing",
+        "info": "",
+        "x": 270,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "e9002475be387080",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "Check if it is alarm time every 60s",
+        "info": "",
+        "x": 990,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "8b850633563da6a9",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "name": "Water level to DB and dashboard",
+        "info": "",
+        "x": 1010,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "dcce1166571ace02",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "44bc797fdaab9651",
+        "name": "Sort commands",
+        "func": "// @ts-nocheck\n//Local variables --------------------------\nvar cmd = msg.payload.content;\nvar making_coffee;\nvar pot_ok;\nvar enough_water;\nvar min_water_level = 20;\nvar message;\nvar alarm_msg;\nvar new_alarm_s;\nvar pub_msg;\nvar u_coffee_s, u_alarm_s = false;\n//Global variables --------------------------\nvar temp = global.get(\"coffee_temp\");\nvar water_level = global.get(\"water_level\");\nvar pot_s = global.get(\"pot_status\");\nvar coffee_s = global.get(\"coffee_status\");\nvar alarm_s = global.get(\"alarm_status\");\nvar alarm_t = global.get(\"alarm_time\");\n//Check enough water ------------------------\nif(water_level<min_water_level){\n    enough_water = false;\n} else {\n    enough_water = true;\n}\n//Check pot position -----------------------\nif(pot_s == \"ok\"){\n    pot_ok = true;\n} else if(pot_s == \"missing\"){\n    pot_ok = false;\n}\n//Check coffee status -----------------------\nif(coffee_s == \"on\"){\n    making_coffee = true;\n}else if(coffee_s = \"off\"){\n    making_coffee = false;\n}\n//Check alarm status ------------------------\nif(alarm_s == \"on\"){\n    // @ts-ignore\n    alarm_msg = \"set at \" + alarm_t + \"h\";\n}else if(alarm_s == \"off\"){\n    // @ts-ignore\n    alarm_msg = \"not set\";\n}\n//Command logic -----------------------------\nswitch(cmd){\n    case \"/start\":\n        if(!making_coffee && pot_ok && enough_water){\n            making_coffee = true;\n            //global.set(\"coffee_status\", \"on\");\n            coffee_s = \"on\";\n            u_coffee_s = true;\n            message = \"Started making coffee\";\n        } else if(making_coffee){\n            message = \"The coffee machine is already on!\";\n        } else if(!pot_ok){\n            message = \"The pot is missing!\";\n        } else if(!enough_water){\n            message = \"Not enough water!\";\n        }\n    break;\n    case \"/stop\":\n        if(!making_coffee){\n            message = \"The coffee machine is already off!\";\n        }else if(making_coffee){\n            u_coffee_s = true;\n            //global.set(\"coffee_status\", \"off\");\n            coffee_s = \"off\";\n            message = \"Stopped!\";\n        }\n    break;\n    case \"/status\":\n        // @ts-ignore\n        var message = \"Current status:\\nPower: \" + coffee_s\n        +\"\\nTemperature: \" + temp\n        + \" ºC\\nWater level: \" + water_level\n        + \" % \\nPot: \" + pot_s + \".\\nAlarm: \" + alarm_msg;\n    break;\n    case \"/set_alarm\":\n        new_alarm_s = \"on\";\n        message = \"do set alarm logic\";\n        u_alarm_s = true;\n    break;\n    case \"/disable_alarm\":\n        if(alarm_s == \"off\"){\n            message = \"Alarm already off\";\n        }else if (alarm_s == \"on\"){\n            new_alarm_s = \"off\";\n            message = \"Alarm turned off\";\n            u_alarm_s = true;\n        }    \n    break;\n    default:\n        message = \"unknown command!\";\n    break;\n}\nmsg.payload.content = message;\nif(!u_alarm_s && !u_coffee_s){\n    return [msg, null, null];\n}else if(!u_alarm_s && u_coffee_s){\n    u_coffee_s = false;\n    //coffee_s = global.get(\"coffee_status\");\n    pub_msg = {\"payload\": {\"status\": coffee_s}};\n    return [msg, pub_msg, null];\n}else if(u_alarm_s && !u_coffee_s){\n    u_alarm_s = false;\n    if(new_alarm_s == \"on\"){\n        pub_msg = {\"payload\": {\"status\": \"on\", \"time\": set_time}};\n    }else if(new_alarm_s == \"off\"){\n        pub_msg = {\"payload\": {\"status\": \"off\", \"time\": \"\" }};\n    }\n    return[msg, null, pub_msg];\n}\n",
+        "outputs": 3,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 500,
+        "wires": [
+            [
+                "f67fc59f42306f02"
+            ],
+            [
+                "c050b5aae7a61a59"
+            ],
+            [
+                "1487379ea14003d8"
+            ]
+        ]
+    },
+    {
+        "id": "f67fc59f42306f02",
+        "type": "telegram sender",
+        "z": "49b807f2f917cbb4",
+        "g": "44bc797fdaab9651",
+        "name": "",
+        "bot": "a2c03ae15197aa2c",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 950,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4e8bf54e6130a089",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "name": "Set alarm_status and alarm_time",
+        "rules": [
+            {
+                "t": "set",
+                "p": "alarm_status",
+                "pt": "global",
+                "to": "payload.status",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "alarm_time",
+                "pt": "global",
+                "to": "payload.time",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 740,
+        "y": 940,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "910471b7b31a2e73",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "pot_status",
+                "pt": "global",
+                "to": "payload.status",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 1040,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "95ec36055c9f8757",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "g": "44bc797fdaab9651",
+        "name": "Telegram",
+        "info": "",
+        "x": 1240,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "a86c78ec0fdacd84",
+        "type": "mqtt out",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "",
+        "topic": "cafeteraiot/alarm/status",
+        "qos": "2",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "73d49c9cfad6f8d1",
+        "x": 1270,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "889f5aaede6cf924",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "115b92cc3500e409",
+        "name": "RST alarm",
+        "func": "msg.payload = {\"status\": \"off\", \"time\": \"\"};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 200,
+        "wires": [
+            [
+                "a86c78ec0fdacd84"
+            ]
+        ]
+    },
+    {
+        "id": "8348ca11a86ee9e0",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "name": "Check how long power has been on loop",
+        "info": "",
+        "x": 260,
+        "y": 1020,
+        "wires": []
+    },
+    {
+        "id": "6ca967f0f6c76866",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "name": "Time since pot of coffee made",
+        "info": "",
+        "x": 220,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "c050b5aae7a61a59",
+        "type": "mqtt out",
+        "z": "49b807f2f917cbb4",
+        "g": "44bc797fdaab9651",
+        "name": "",
+        "topic": "cafeteraiot/coffee/status",
+        "qos": "2",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "73d49c9cfad6f8d1",
+        "x": 1330,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "1487379ea14003d8",
+        "type": "mqtt out",
+        "z": "49b807f2f917cbb4",
+        "g": "44bc797fdaab9651",
+        "name": "",
+        "topic": "cafeteraiot/alarm/status",
+        "qos": "1",
+        "retain": "true",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "73d49c9cfad6f8d1",
+        "x": 1330,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "ad8049bfd1c9b63b",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "coffee_temp",
+                "pt": "global",
+                "to": "payload.temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 580,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3521c6f2ad96549f",
+        "type": "comment",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "Data IN - Save in DB",
+        "info": "",
+        "x": 310,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "62a4be0ed10eef2c",
+        "type": "mqtt in",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "topic": "cafeteraiot/alarm/status",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "73d49c9cfad6f8d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 400,
+        "wires": [
+            [
+                "11c5c1d5a4bbe329",
+                "cfcc16029c73f145",
+                "9f68b0de15cea53a"
+            ]
+        ]
+    },
+    {
+        "id": "eaca7a383a5dbe95",
+        "type": "mqtt in",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "topic": "cafeteraiot/water_level",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "73d49c9cfad6f8d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 520,
+        "wires": [
+            [
+                "0921177f9c773158",
+                "20576d1cbf559970"
+            ]
+        ]
+    },
+    {
+        "id": "10fe3d50164ded6a",
+        "type": "mqtt in",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "topic": "cafeteraiot/coffee/temp",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "73d49c9cfad6f8d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 600,
+        "wires": [
+            [
+                "ad8049bfd1c9b63b",
+                "5914922c8327652f"
+            ]
+        ]
+    },
+    {
+        "id": "d4767d59d5368664",
+        "type": "mqtt in",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "topic": "cafeteraiot/pot",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "73d49c9cfad6f8d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 130,
+        "y": 760,
+        "wires": [
+            [
+                "40c6c245f620ae11",
+                "f969f575762c722e"
+            ]
+        ]
+    },
+    {
+        "id": "a4833898bd4f61d3",
+        "type": "mqtt in",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "topic": "cafeteraiot/coffee/status",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "73d49c9cfad6f8d1",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 160,
+        "y": 680,
+        "wires": [
+            [
+                "f175acee830fded7",
+                "d581a8153b167cdd"
+            ]
+        ]
+    },
+    {
+        "id": "11c5c1d5a4bbe329",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "+date",
+        "func": "msg.payload[\"date\"] = new Date();\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 400,
+        "wires": [
+            [
+                "2851df91cc48657b"
+            ]
+        ]
+    },
+    {
+        "id": "0921177f9c773158",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "+date",
+        "func": "msg.payload[\"date\"] = new Date();\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 520,
+        "wires": [
+            [
+                "c4f0545308bd1fb9"
+            ]
+        ]
+    },
+    {
+        "id": "5914922c8327652f",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "+date",
+        "func": "msg.payload[\"date\"] = new Date();\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 600,
+        "wires": [
+            [
+                "5704a9c812af2a37"
+            ]
+        ]
+    },
+    {
+        "id": "f175acee830fded7",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "+date",
+        "func": "msg.payload[\"date\"] = new Date();\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 680,
+        "wires": [
+            [
+                "eabe070bc357996d"
+            ]
+        ]
+    },
+    {
+        "id": "40c6c245f620ae11",
+        "type": "function",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "+date",
+        "func": "msg.payload[\"date\"] = new Date();\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 760,
+        "wires": [
+            [
+                "7023586abefdd463"
+            ]
+        ]
+    },
+    {
+        "id": "2851df91cc48657b",
+        "type": "mongodb out",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "alarm",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 590,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "c4f0545308bd1fb9",
+        "type": "mongodb out",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "water_level",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 610,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "5704a9c812af2a37",
+        "type": "mongodb out",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "temp",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 590,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "eabe070bc357996d",
+        "type": "mongodb out",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "coffee_status",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 610,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "7023586abefdd463",
+        "type": "mongodb out",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "mongodb": "82442d614a8db0f5",
+        "name": "",
+        "collection": "pot_status",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "store",
+        "x": 600,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "cfcc16029c73f145",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "alarm_status",
+                "pt": "global",
+                "to": "payload.status",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 440,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "20576d1cbf559970",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "water_level",
+                "pt": "global",
+                "to": "payload.level",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 580,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d581a8153b167cdd",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "coffee_status",
+                "pt": "global",
+                "to": "payload.status",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f969f575762c722e",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "pot_status",
+                "pt": "global",
+                "to": "payload.status",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 580,
+        "y": 800,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9f68b0de15cea53a",
+        "type": "change",
+        "z": "49b807f2f917cbb4",
+        "g": "89c61fe7b44f9f98",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "alarm_time",
+                "pt": "global",
+                "to": "payload.time",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 580,
+        "y": 480,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "73d49c9cfad6f8d1",
+        "type": "mqtt-broker",
+        "name": "Mio_WiFi",
+        "broker": "192.168.1.47",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "82442d614a8db0f5",
+        "type": "mongodb",
+        "hostname": "cafeteraiot.e8gkku9.mongodb.net",
+        "topology": "dnscluster",
+        "connectOptions": "",
+        "port": "27017",
+        "db": "CafeteraIOT",
+        "name": "ATLAS_MongoDB"
+    },
+    {
+        "id": "85d4fb6d3172e56e",
+        "type": "ui_group",
+        "name": "CafeteraIOT",
+        "tab": "99463d750a082936",
+        "order": 3,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "a2c03ae15197aa2c",
+        "type": "telegram bot",
+        "botname": "CafeteraIOT_bot",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "updatemode": "polling",
+        "pollinterval": "300",
+        "usesocks": false,
+        "sockshost": "",
+        "socksprotocol": "socks5",
+        "socksport": "6667",
+        "socksusername": "anonymous",
+        "sockspassword": "",
+        "bothost": "",
+        "botpath": "",
+        "localbotport": "8443",
+        "publicbotport": "8443",
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
+    },
+    {
+        "id": "99463d750a082936",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]

@@ -18,10 +18,10 @@ Por hacer:
 StaticJsonDocument<64> alarm_json;
 StaticJsonDocument<64> coffee_status_json;
 StaticJsonDocument<64> coffee_s_json;
+StaticJsonDocument<64> coffee_temp_json;
 StaticJsonDocument<64> alarm_s_json;
 StaticJsonDocument<64> water_level_json;
-//StaticJsonDocument<256> mensaje;
-//StaticJsonDocument<128> prueba_post;
+StaticJsonDocument<64> pot_status_json;
 //----------------------------------------------------------------------------------
 // WiFi SETUP
 //----------------------------------------------------------------------------------
@@ -61,7 +61,9 @@ String id_placa = "";
 String topic_pub = "";
 String topic_alarm_status = "cafeteraiot/alarm/status";
 String topic_coffee_status = "cafeteraiot/coffee/status";
+String topic_coffee_temp = "cafeteraiot/coffee/temp";
 String topic_water_level = "cafeteraiot/water_level";
+String topic_pot_status = "cafeteraiot/pot";
 //Funciones
 void conectar_mqtt(){
   while(!mqtt_client.connected()){
@@ -134,6 +136,20 @@ void checkPot(){
   }
 }
 
+void doPot(){
+  checkSW = false;
+  delay(50);
+  potInplace = !digitalRead(potSW);
+  if(potInplace){
+    pot_status_json["status"] = "ok";
+  }else if(!potInplace){
+    pot_status_json["status"] = "missing";
+  }
+  String pot_status_str;
+  serializeJson(pot_status_json, pot_status_str);
+  mqtt_client.publish(topic_pot_status.c_str(), pot_status_str.c_str(), true);
+  
+}
 //----------------------------------------------------------------------------------
 // TEMP SENSOR
 //----------------------------------------------------------------------------------    
@@ -147,6 +163,14 @@ DS18B20 sensor(&oneWire);
 unsigned long last_temp_check = 0;
 int temp = 0;
 //Functions
+void doTemp(){
+    sensor.requestTemperatures();
+    temp = sensor.getTempC();
+    coffee_temp_json["temp"] = temp;
+    String coffee_temp_str;
+    serializeJson(coffee_temp_json, coffee_temp_str);
+    mqtt_client.publish(topic_coffee_temp.c_str(), coffee_temp_str.c_str(), true);
+}
 //----------------------------------------------------------------------------------
 // ULTRASONIC SENSOR
 //----------------------------------------------------------------------------------    
@@ -160,13 +184,13 @@ unsigned long last_water_check = 0;
 int water_level_percent = 0;
 //Functions
 void doWaterLevel(){
-    int water_level_mm = hcsr04.distanceInMillimeters();
-    water_level_percent = map(water_level_mm, 115, 25, 0, 100);
-    water_level_json["level"] = water_level_percent;
-    String water_level_str;
-    serializeJson(water_level_json, water_level_str);
-    mqtt_client.publish(topic_water_level.c_str(), water_level_str.c_str(), true);
-    Serial.println("Water level: " + String(water_level_percent) + " %.");
+  int water_level_mm = hcsr04.distanceInMillimeters();
+  water_level_percent = map(water_level_mm, 115, 25, 0, 100);
+  water_level_json["level"] = water_level_percent;
+  String water_level_str;
+  serializeJson(water_level_json, water_level_str);
+  mqtt_client.publish(topic_water_level.c_str(), water_level_str.c_str(), true);
+  //Serial.println("Water level: " + String(water_level_percent) + " %.");
 }
 //----------------------------------------------------------------------------------
 // DISPLAY GEOMETRY
@@ -719,15 +743,12 @@ void loop() {
   doEncoder();
   // Pot switch
   if (checkSW){
-    delay(50);
-    potInplace = !digitalRead(potSW);
-    checkSW = false;
+    doPot();
   }
   // Temp sensors
-  if (millis() - last_temp_check > 500){
+  if (millis() - last_temp_check > 1000){
     last_temp_check = millis();
-    sensor.requestTemperatures();
-    temp = sensor.getTempC();
+    doTemp();
   }
   // Ultrasonic sensor
   if (millis() - last_water_check > 10000){
