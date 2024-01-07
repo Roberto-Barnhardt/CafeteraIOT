@@ -41,7 +41,6 @@ void conectar_wifi(){
   }
   Serial.println("Conectado a " + ssid + " !");  
 }
-// Functions
 
 //----------------------------------------------------------------------------------
 // MQTT SETUP
@@ -104,6 +103,58 @@ void procesa_mensaje(char* topic, byte* payload, unsigned int length) {
     }
   }
 }
+
+//----------------------------------------------------------------------------------
+// FOTA SETUP
+//----------------------------------------------------------------------------------
+//Librerías
+#include <HTTPUpdate.h>
+#include <HTTPClient.h>
+//Definitions
+int LED_blink = 16;  
+int LED_OTA   = 16;
+int LED_wifi  = 2;
+#define OTA_URL  "http://192.168.1.47:1880/esp8266-ota/update"// Address of OTA update server
+#define FW_BOARD_NAME ""
+#define HTTP_OTA_VERSION      String(__FILE__).substring(String(__FILE__).lastIndexOf('\\')+1) + FW_BOARD_NAME 
+#define DEBUG_STRING "["+String(__FUNCTION__)+"():"+String(__LINE__)+"] "
+WiFiClient wClient;
+//Funciones
+void inicio_OTA(){ Serial.println(DEBUG_STRING+"Nuevo Firmware encontrado. Actualizando..."); }
+void final_OTA() { Serial.println(DEBUG_STRING+"Fin OTA. Reiniciando..."); }
+void error_OTA(int e){ Serial.println(DEBUG_STRING+"ERROR OTA: "+String(e)+" "+httpUpdate.getLastErrorString()); }
+void progreso_OTA(int x, int todo)
+{
+  int progreso=(int)((x*100)/todo);
+  String espacio = (progreso<10)? "  ":(progreso<100)? " " : "";
+  if(progreso%10==0) Serial.println(DEBUG_STRING+"Progreso: "+espacio+String(progreso)+"% - "+String(x/1024)+"K de "+String(todo/1024)+"K");
+}
+void intenta_OTA()
+{ 
+  Serial.println( "---------------------------------------------" );  
+  Serial.print  ( DEBUG_STRING+"MAC de la placa: "); Serial.println(WiFi.macAddress());
+  Serial.println( DEBUG_STRING+"Comprobando actualización:" );
+  Serial.println( DEBUG_STRING+"URL: "+OTA_URL );
+  Serial.println( "---------------------------------------------" );  
+  httpUpdate.setLedPin(LED_OTA, LOW);
+  httpUpdate.onStart(inicio_OTA);
+  httpUpdate.onError(error_OTA);
+  httpUpdate.onProgress(progreso_OTA);
+  httpUpdate.onEnd(final_OTA);  
+  switch(httpUpdate.update(wClient, OTA_URL, HTTP_OTA_VERSION)) {
+    case HTTP_UPDATE_FAILED:
+      Serial.println(DEBUG_STRING+"HTTP update failed: Error ("+String(httpUpdate.getLastError())+"): "+httpUpdate.getLastErrorString());
+      break;
+    case HTTP_UPDATE_NO_UPDATES:
+      Serial.println(DEBUG_STRING+"El dispositivo ya está actualizado");
+      break;
+    case HTTP_UPDATE_OK:
+      Serial.println(DEBUG_STRING+"OK");
+      break;
+    }
+    
+}
+
 //----------------------------------------------------------------------------------
 // DISPLAY SETUP
 //----------------------------------------------------------------------------------
@@ -690,17 +741,34 @@ void setup() {
   //WiFi ----------------------------------
   conectar_wifi();
 
-  //MQTT ---------------------------------------------------------
+  //Setup OTA
+  Serial.println();
+  Serial.println(DEBUG_STRING+"Fuente del programa: "+String(__FILE__));
+  Serial.println(DEBUG_STRING+"Nombre Firmware: "+String(HTTP_OTA_VERSION)+".bin");
+  Serial.println(DEBUG_STRING+"Placa: "+String(ARDUINO_BOARD));
+  Serial.println(DEBUG_STRING+"Comienza SETUP...");
+  pinMode(LED_blink, OUTPUT);       
+  pinMode(LED_wifi, OUTPUT);    
+  digitalWrite(LED_blink, HIGH);  // LED off
+  digitalWrite(LED_wifi , LOW);   // LED on
+  intenta_OTA();
+  Serial.println(DEBUG_STRING+"fin SETUP\n");
+  //WiFi ----------------------------------
+  //WiFi.disconnect();
+  //delay(50);
+  //conectar_wifi();
+  //MQTT --------------------------------------------------------
   id_placa = ESP.getEfuseMac();
   Serial.println("ID ESP32: " + id_placa);
   Serial.println("Topic PUB: " + topic_pub);
   mqtt_client.setServer(mqtt_server.c_str(), 1883);
   mqtt_client.setCallback(procesa_mensaje);
-  //mqtt_client.setBufferSize(512);
+
   conectar_mqtt();
   mqtt_client.subscribe(topic_alarm_status.c_str());
   mqtt_client.subscribe(topic_coffee_status.c_str());
 
+  
   // Encoder---------------------------------------------
   encoder.attachHalfQuad(encB, encA);
   encoder.setCount(0);  
