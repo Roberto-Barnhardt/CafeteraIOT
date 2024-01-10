@@ -1,12 +1,3 @@
-/*
-Hecho:
-  - Rotary encoder contando correctamente.
-Por hacer:
-  - MQTT...
-  - OLED...
-  - MENU ENTERO...
-*/
-//Probando1
 //-------------------------------------------------------------------------------
 //Librerías generales
 //-------------------------------------------------------------------------------
@@ -22,14 +13,16 @@ StaticJsonDocument<64> coffee_temp_json;
 StaticJsonDocument<64> alarm_s_json;
 StaticJsonDocument<64> water_level_json;
 StaticJsonDocument<64> pot_status_json;
+StaticJsonDocument<64> fota_status_json;
+StaticJsonDocument<64> fota_s_json;
 //----------------------------------------------------------------------------------
 // WiFi SETUP
 //----------------------------------------------------------------------------------
 //Librerías
 #include <WiFi.h>
 //Variables
-String ssid = "MOVISTAR_3D01";
-String password = "LC4hwy775866XGmZnZ7h";
+String ssid = "Bernardo";
+String password = "Todoslosbytesfium";
 WiFiClient wifi_client;
 //Funciones
 void conectar_wifi(){
@@ -52,9 +45,10 @@ PubSubClient mqtt_client(wifi_client);
 String alarm_s = "";
 String alarm_h = "";
 String coffee_s = "";
-bool makingCoffee;
+bool makingCoffee = false;
+bool checkFota = false;
 //MQTT
-String mqtt_server = "192.168.1.47";
+String mqtt_server = "192.168.31.195";
 String id_placa = "";
 //Topics
 String topic_pub = "";
@@ -63,6 +57,7 @@ String topic_coffee_status = "cafeteraiot/coffee/status";
 String topic_coffee_temp = "cafeteraiot/coffee/temp";
 String topic_water_level = "cafeteraiot/water_level";
 String topic_pot_status = "cafeteraiot/pot";
+String topic_check_fota = "cafeteraiot/FOTA";
 //Funciones
 void conectar_mqtt(){
   while(!mqtt_client.connected()){
@@ -101,6 +96,16 @@ void procesa_mensaje(char* topic, byte* payload, unsigned int length) {
     } else if(coffee_s == "off"){
       makingCoffee = false;
     }
+  }else if(String(topic)==topic_check_fota) // == *topic al que estemos suscrito*
+  {
+    deserializeJson(fota_status_json, mensaje);
+    String fota_status = fota_status_json["update"];
+    if(fota_status == "true"){
+      checkFota = true;
+    }else if(fota_status == "false"){
+      checkFota = false;
+    }
+  
   }
 }
 
@@ -111,10 +116,10 @@ void procesa_mensaje(char* topic, byte* payload, unsigned int length) {
 #include <HTTPUpdate.h>
 #include <HTTPClient.h>
 //Definitions
-int LED_blink = 16;  
-int LED_OTA   = 16;
+int LED_blink = 12;  
+int LED_OTA   = 12;
 int LED_wifi  = 2;
-#define OTA_URL  "http://192.168.1.47:1880/esp8266-ota/update"// Address of OTA update server
+#define OTA_URL  "http://192.168.31.195:1880/esp8266-ota/update"// Address of OTA update server
 #define FW_BOARD_NAME ""
 #define HTTP_OTA_VERSION      String(__FILE__).substring(String(__FILE__).lastIndexOf('\\')+1) + FW_BOARD_NAME 
 #define DEBUG_STRING "["+String(__FUNCTION__)+"():"+String(__LINE__)+"] "
@@ -237,6 +242,7 @@ int water_level_percent = 0;
 void doWaterLevel(){
   int water_level_mm = hcsr04.distanceInMillimeters();
   water_level_percent = map(water_level_mm, 115, 25, 0, 100);
+  water_level_percent = constrain(water_level_percent, 0, 100);
   water_level_json["level"] = water_level_percent;
   String water_level_str;
   serializeJson(water_level_json, water_level_str);
@@ -752,23 +758,18 @@ void setup() {
   digitalWrite(LED_blink, HIGH);  // LED off
   digitalWrite(LED_wifi , LOW);   // LED on
   intenta_OTA();
-  Serial.println(DEBUG_STRING+"fin SETUP\n");
-  //WiFi ----------------------------------
-  //WiFi.disconnect();
-  //delay(50);
-  //conectar_wifi();
+
   //MQTT --------------------------------------------------------
   id_placa = ESP.getEfuseMac();
   Serial.println("ID ESP32: " + id_placa);
   Serial.println("Topic PUB: " + topic_pub);
   mqtt_client.setServer(mqtt_server.c_str(), 1883);
   mqtt_client.setCallback(procesa_mensaje);
-
   conectar_mqtt();
   mqtt_client.subscribe(topic_alarm_status.c_str());
   mqtt_client.subscribe(topic_coffee_status.c_str());
+  mqtt_client.subscribe(topic_check_fota.c_str());
 
-  
   // Encoder---------------------------------------------
   encoder.attachHalfQuad(encB, encA);
   encoder.setCount(0);  
@@ -813,7 +814,17 @@ void loop() {
   if (checkSW){
     doPot();
   }
-  // Temp sensors
+  // Check FOTA
+  if(checkFota){
+    checkFota = false;
+    intenta_OTA();
+    fota_s_json["update"] = "false";
+    String fota_s_str;
+    serializeJson(fota_s_json, fota_s_str);
+    mqtt_client.publish(topic_check_fota.c_str(), fota_s_str.c_str(), true);
+    //conectar_mqtt();
+  } 
+   // Temp sensors
   if (millis() - last_temp_check > 1000){
     last_temp_check = millis();
     doTemp();
